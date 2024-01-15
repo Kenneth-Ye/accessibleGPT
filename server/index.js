@@ -3,6 +3,8 @@ import cors from 'cors';
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv'
 
+import path from 'path'
+import fs from 'fs'
 
 const app = express();
 app.use(cors());
@@ -30,21 +32,31 @@ app.post('/', async(req, res) => {
             }
         );
         console.log("Successfully got response from openai")
-        
-        const ttsaudio = await openai.audio.speech.create({
-            model: "tts-1",
-            voice: "alloy",
-            input: response.choices[0].message.content,
-          });
-        
-        res.status(200).send({
+        res.status(200).json({
             gptresponse: response.choices[0].message.content,
-            audio: ttsaudio
         })
     } 
-    catch (error) {
+    catch(error) {
         console.log(error)
     }
 });
 
+app.post('/text-to-speech', async(req, res) => {
+    try {
+        const ttsaudio = await openai.audio.speech.create({
+            model: "tts-1",
+            voice: "alloy",
+            input: req.body.message,
+        });
+        const mp3 = Buffer.from(await ttsaudio.arrayBuffer());
+        const speechfile = path.resolve("./speech.mp3");
+        await fs.promises.writeFile(speechFile, mp3);
+        res.status(200).sendFile("src/audioFile.mp3", "./speech.mp3");
+    } catch(error) {
+        console.log(error);
+    }
+})
 app.listen(3000, () => console.log('Server is running on port 3000'))
+
+
+
