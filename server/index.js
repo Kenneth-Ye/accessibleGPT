@@ -28,7 +28,8 @@ app.post('/', async(req, res) => {
         const response = await openai.chat.completions.create(
             {
                 messages: req.body.message,
-                model: "gpt-3.5-turbo"
+                model: "gpt-3.5-turbo",
+                max_tokens: 500
             }
         );
         console.log("Successfully got response from openai")
@@ -41,17 +42,26 @@ app.post('/', async(req, res) => {
     }
 });
 
-app.post('/text-to-speech', async(req, res) => {
+app.post('/dynamic-mp3', async(req, res) => {
     try {
         const ttsaudio = await openai.audio.speech.create({
             model: "tts-1",
             voice: "alloy",
             input: req.body.message,
         });
-        const mp3 = Buffer.from(await ttsaudio.arrayBuffer());
-        const speechfile = path.resolve("./speech.mp3");
-        await fs.promises.writeFile(speechFile, mp3);
-        res.status(200).sendFile("src/audioFile.mp3", "./speech.mp3");
+        const mp3Buffer = Buffer.from(await ttsaudio.arrayBuffer());
+        //const speechfile = path.resolve("./speech.mp3");
+        //await fs.promises.writeFile(speechFile, mp3Buffer);
+        //res.status(200).sendFile("src/audioFile.mp3", "./speech.mp3");
+        res.set({
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': mp3Buffer.length
+        });
+        console.log(mp3Buffer)
+        res.send(mp3Buffer);
+
+        // console.log(ttsaudio)
+        // res.send(ttsaudio);
     } catch(error) {
         console.log(error);
     }
